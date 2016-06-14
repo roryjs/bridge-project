@@ -24,12 +24,45 @@ void loop() {
         Serial.print(B_MUTE[0], HEX);
         Serial.print(B_MUTE[1], HEX);
         Serial.println();
-        
+        /*
         if (output[0] == B_LEFT[0] && output[1] == B_LEFT[1]) {
           digitalWrite(13, HIGH);
         } else if (output[0] == B_RIGHT[0] && output[1] == B_RIGHT[1]) {
           digitalWrite(13, LOW);
         }
+        */
+        switch(dta[8]) //first byte of button data is unique for each button!
+        {
+            case B_1[0]:
+                digitalWrite(13, HIGH); //flash once
+                delay(500);
+                digitalWrite(13, LOW);
+                break;
+            case B_2[0]:
+                digitalWrite(13, HIGH); // 1
+                delay(500);
+                digitalWrite(13, LOW);
+                delay(500);
+                digitalWrite(13, HIGH); // 2
+                delay(500);
+                digitalWrite(13, LOW);
+                break;
+            default:
+                digitalWrite(13, HIGH); // 1
+                delay(500);
+                digitalWrite(13, LOW);
+                delay(500);
+                digitalWrite(13, HIGH); // 2
+                delay(500);
+                digitalWrite(13, LOW);
+                delay(500);
+                digitalWrite(13, HIGH); // 3
+                delay(500);
+                digitalWrite(13, LOW);                
+                break;
+        }
     }
+    
+
 
 }
