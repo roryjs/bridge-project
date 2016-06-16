@@ -1,10 +1,11 @@
 #include <IRSendRev.h>
 #include "1363.cpp"
 
-const int pinRecv = 0;
+const int pinRecv = 8;
 bool waiting_for_numeric = false;
 int numeric_order = 0;
 int numeric_value = 0;
+int current_angle = 0;
 
 void setup() {
     Serial.begin(115200);
@@ -13,7 +14,7 @@ void setup() {
     pinMode(9, OUTPUT);
     pinMode(10, OUTPUT);
     pinMode(13, OUTPUT);
-    digitalWrite(10, LOW);
+    digitalWrite(10, HIGH);
 }
 
 unsigned char dta[20];
@@ -32,6 +33,13 @@ void loop() {
                 numeric_order = 0;
                 numeric_value = 0;
                 break;
+            case B_LEFT[0]:
+                for (int i = 0; i < 200; i++) {
+                  digitalWrite(9, HIGH);
+                  delay(1);
+                  digitalWrite(9, LOW);
+                }
+                break;
             default:
                 if (waiting_for_numeric && button_numeric(dta[8]) >= 0) {
                   int value = button_numeric(dta[8]);
@@ -43,10 +51,26 @@ void loop() {
                     case 1:
                       numeric_value += value * 10;
                       break;
-                    case 2:
+                    case 2: {
                       numeric_value += value;
-                      goto_angle(numeric_value);
-                      break;
+                      int initial_angle = current_angle;
+                      int final_angle = boundary(numeric_value);
+                      if (initial_angle == final_angle)
+                        break;
+                      
+                      int rotation_angle; //the amount the motor will spin in the counter-clockwise direction                      
+                      
+                      if(final_angle - initial_angle <= 0){
+                          rotation_angle = abs(initial_angle - final_angle);
+                      }
+                      else if(final_angle - initial_angle > 0){
+                          rotation_angle = 360 - abs((initial_angle - final_angle));
+                      }
+
+                      current_angle = final_angle;
+ 
+                      goto_angle(rotation_angle);
+                    } break; 
                     default:
                       break;
                   }
@@ -60,8 +84,9 @@ void loop() {
 }
 
 void goto_angle(int angle) {
-    Serial.println(angle);
-    int step_no = angle / 360.0 * 3200;
+    if (angle == 360)
+      angle = 0;
+    int step_no = (360 - angle) / 360.0 * 3250;
     for (int i = 0; i < step_no; i++) {
         digitalWrite(9, HIGH);
         delay(1);
@@ -69,8 +94,25 @@ void goto_angle(int angle) {
     }
 
     numeric_order = 0;
-    numeric_value = 0;
     waiting_for_numeric = false;
+}
+
+int boundary(int angle){
+    //this simplifies the inputted angle, and puts it withing the range of 0 and 359
+    
+    bool limit = true;
+    while(limit){
+        if(angle >=0 and angle <= 359){
+            limit = false;
+        }
+        else if(angle < 0){
+            angle = angle + 360;
+        }
+        else if(angle > 0){
+            angle = angle - 360;
+        }
+    }
+    return angle;
 }
 
 int button_numeric(char button_hex) {
